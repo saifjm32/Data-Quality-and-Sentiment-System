@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.presentation.api.routes.analysis_routes import router as analysis_router
 
@@ -20,3 +21,5 @@ def health_check():
 
 
 app.include_router(analysis_router)
+
+app.mount("/ui", StaticFiles(directory="ui", html=True), name="ui")

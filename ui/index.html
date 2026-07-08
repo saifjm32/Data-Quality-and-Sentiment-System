@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Quality and Sentiment System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f7f7f7;
+        }
+
+        section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 24px;
+            border-radius: 8px;
+        }
+
+        input, textarea, button {
+            display: block;
+            width: 100%;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        button {
+            cursor: pointer;
+            background: #222;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        pre {
+            background: #eee;
+            padding: 12px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Data Quality and Sentiment System</h1>
+
+    <section>
+        <h2>Single Record Analysis</h2>
+
+        <label>Record ID</label>
+        <input id="single-id" value="1" />
+
+        <label>Text</label>
+        <textarea id="single-text">Great service</textarea>
+
+        <button onclick="analyzeSingle()">Analyze Single Record</button>
+
+        <h3>Result</h3>
+        <pre id="single-result"></pre>
+    </section>
+
+    <section>
+        <h2>Bulk Analysis</h2>
+
+        <p>Enter JSON records:</p>
+
+        <textarea id="bulk-input" rows="10">[
+  {
+    "id": "1",
+    "text": "Great service"
+  },
+  {
+    "id": "2",
+    "text": "This is terrible"
+  },
+  {
+    "id": "3",
+    "text": ""
+  }
+]</textarea>
+
+        <button onclick="analyzeBulk()">Analyze Bulk Records</button>
+
+        <h3>Result</h3>
+        <pre id="bulk-result"></pre>
+    </section>
+
+    <section>
+        <h2>History</h2>
+
+        <button onclick="loadHistory()">Load History</button>
+
+        <h3>Result</h3>
+        <pre id="history-result"></pre>
+    </section>
+
+    <script>
+        async function analyzeSingle() {
+            const id = document.getElementById("single-id").value;
+            const text = document.getElementById("single-text").value;
+
+            const response = await fetch("/api/analyze", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: id,
+                    text: text
+                })
+            });
+
+            const data = await response.json();
+
+            document.getElementById("single-result").textContent =
+                JSON.stringify(data, null, 2);
+        }
+
+        async function analyzeBulk() {
+            const bulkText = document.getElementById("bulk-input").value;
+            const records = JSON.parse(bulkText);
+
+            const response = await fetch("/api/analyze/bulk", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    records: records
+                })
+            });
+
+            const data = await response.json();
+
+            document.getElementById("bulk-result").textContent =
+                JSON.stringify(data, null, 2);
+        }
+
+        async function loadHistory() {
+            const response = await fetch("/api/history");
+
+            const data = await response.json();
+
+            document.getElementById("history-result").textContent =
+                JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
