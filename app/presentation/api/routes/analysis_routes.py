@@ -5,7 +5,8 @@ from app.application.use_cases.analyze_bulk_records_use_case import AnalyzeBulkR
 from app.application.use_cases.analyze_single_record_use_case import AnalyzeSingleRecordUseCase
 from app.domain.entities.analysis_result import AnalysisResult
 from app.domain.entities.text_record import TextRecord
-from app.infrastructure.ml.fake_sentiment_analyzer import FakeSentimentAnalyzer
+from app.infrastructure.config.app_config import AppConfig
+from app.infrastructure.ml.sentiment_analyzer_factory import create_sentiment_analyzer
 from app.infrastructure.repositories.in_memory_analysis_repository import InMemoryAnalysisRepository
 from app.presentation.schemas.analysis_schema import (
     AnalyzeRequest,
@@ -18,8 +19,11 @@ from app.presentation.schemas.analysis_schema import (
 router = APIRouter(prefix="/api", tags=["Analysis"])
 
 
-validator = TextValidationService()
-sentiment_analyzer = FakeSentimentAnalyzer()
+validator = TextValidationService(
+    min_length=AppConfig.MIN_TEXT_LENGTH,
+    max_length=AppConfig.MAX_TEXT_LENGTH
+)
+sentiment_analyzer = create_sentiment_analyzer()
 repository = InMemoryAnalysisRepository()
 
 analyze_single_use_case = AnalyzeSingleRecordUseCase(
