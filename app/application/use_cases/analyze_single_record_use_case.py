@@ -18,13 +18,18 @@ class AnalyzeSingleRecordUseCase:
 
     def execute(self, record: TextRecord) -> AnalysisResult:
         validation_result = self.validator.validate_single(record)
+        errors = list(validation_result.errors)
 
-        if not validation_result.is_valid:
+        if validation_result.is_valid:
+            errors.extend(self._find_repository_duplicate_errors(record))
+
+        if errors:
             result = AnalysisResult(
                 record_id=record.record_id,
                 text=record.text,
+                source=record.source,
                 is_valid=False,
-                errors=validation_result.errors,
+                errors=errors,
                 sentiment=None
             )
 
@@ -36,6 +41,7 @@ class AnalyzeSingleRecordUseCase:
         result = AnalysisResult(
             record_id=record.record_id,
             text=record.normalized_text(),
+            source=record.source,
             is_valid=True,
             errors=[],
             sentiment=sentiment
@@ -43,3 +49,19 @@ class AnalyzeSingleRecordUseCase:
 
         self.repository.save(result)
         return result
+
+    def _find_repository_duplicate_errors(self, record: TextRecord) -> list[str]:
+        errors = []
+
+        record_id = record.record_id.strip()
+        text = record.normalized_text().lower()
+
+        if record_id and self.repository.get_by_record_id(record_id) is not None:
+            errors.append("Duplicate record ID in history")
+
+        for existing_result in self.repository.get_all():
+            if existing_result.text.strip().lower() == text and text != "":
+                errors.append("Duplicate text in history")
+                break
+
+        return errors

@@ -27,12 +27,12 @@ class TextValidationService:
             text = record.normalized_text().lower()
 
             if record_id in seen_record_ids:
-                errors.append("Duplicate record ID")
+                errors.append("Duplicate record ID in bulk request")
             elif record_id != "":
                 seen_record_ids.add(record_id)
 
             if text in seen_texts:
-                errors.append("Duplicate text")
+                errors.append("Duplicate text in bulk request")
             elif text != "":
                 seen_texts.add(text)
 
@@ -48,6 +48,9 @@ class TextValidationService:
 
         if record.record_id.strip() == "":
             errors.append("Record ID is required")
+
+        if record.normalized_source() == "":
+            errors.append("Source is required")
 
         text = record.normalized_text()
 

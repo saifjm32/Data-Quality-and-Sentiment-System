@@ -10,11 +10,13 @@ class SentimentResponse(BaseModel):
 class AnalyzeRequest(BaseModel):
     id: str
     text: str
+    source: str | None = None
 
 
 class AnalyzeResponse(BaseModel):
     id: str
     text: str
+    source: str | None
     valid: bool
     errors: list[str]
     sentiment: SentimentResponse | None

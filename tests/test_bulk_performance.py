@@ -12,7 +12,8 @@ def test_bulk_endpoint_processes_5000_records():
     records = [
         {
             "id": f"bulk-performance-{index}",
-            "text": f"Great service number {index}"
+            "text": f"Great service number {index}",
+            "source": "survey"
         }
         for index in range(5000)
     ]
@@ -35,6 +36,8 @@ def test_bulk_endpoint_processes_5000_records():
     assert data["invalid"] == 0
     assert data["processing_time_seconds"] >= 0
     assert data["sentiment_summary"]["positive"] == 5000
+    assert data["sentiment_summary"]["negative"] == 0
+    assert data["sentiment_summary"]["neutral"] == 0
     assert data["invalid_records"] == []
     assert data["results"] is None
 
