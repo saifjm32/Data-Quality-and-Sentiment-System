@@ -32,3 +32,8 @@ class AppConfig:
     QDRANT_VECTOR_SIZE: int = int(
         os.getenv("QDRANT_VECTOR_SIZE", "384")
     )
+    SENTIMENT_BATCH_SIZE: int = int(os.getenv("SENTIMENT_BATCH_SIZE", "32"))
+
+    BULK_INCLUDE_RESULTS_DEFAULT: bool = (
+       os.getenv("BULK_INCLUDE_RESULTS_DEFAULT", "false").lower() == "true"
+) 

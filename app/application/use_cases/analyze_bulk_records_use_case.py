@@ -1,3 +1,5 @@
+import time
+
 from app.application.services.sentiment_analyzer import SentimentAnalyzer
 from app.application.services.text_validation_service import TextValidationService
 from app.domain.entities.analysis_result import AnalysisResult
@@ -18,9 +20,11 @@ class AnalyzeBulkRecordsUseCase:
         self.repository = repository
 
     def execute(self, records: list[TextRecord]) -> BulkAnalysisResult:
+        start_time = time.perf_counter()
+
         validation_results = self.validator.validate_bulk(records)
 
-        analysis_results: list[AnalysisResult] = []
+        analysis_results: list[AnalysisResult | None] = [None] * len(records)
 
         sentiment_summary = {
             "positive": 0,
@@ -28,10 +32,12 @@ class AnalyzeBulkRecordsUseCase:
             "neutral": 0
         }
 
-        valid_count = 0
+        valid_records: list[tuple[int, TextRecord]] = []
         invalid_count = 0
 
-        for record, validation_result in zip(records, validation_results):
+        for index, (record, validation_result) in enumerate(
+            zip(records, validation_results)
+        ):
             if not validation_result.is_valid:
                 invalid_count += 1
 
@@ -43,13 +49,19 @@ class AnalyzeBulkRecordsUseCase:
                     sentiment=None
                 )
 
-                self.repository.save(result)
-                analysis_results.append(result)
+                analysis_results[index] = result
                 continue
 
-            sentiment = self.sentiment_analyzer.analyze(record.normalized_text())
+            valid_records.append((index, record))
 
-            valid_count += 1
+        valid_texts = [
+            record.normalized_text()
+            for _, record in valid_records
+        ]
+
+        sentiments = self.sentiment_analyzer.analyze_batch(valid_texts)
+
+        for (index, record), sentiment in zip(valid_records, sentiments):
             sentiment_summary[sentiment.value] += 1
 
             result = AnalysisResult(
@@ -60,13 +72,23 @@ class AnalyzeBulkRecordsUseCase:
                 sentiment=sentiment
             )
 
+            analysis_results[index] = result
+
+        final_results = [
+            result for result in analysis_results
+            if result is not None
+        ]
+
+        for result in final_results:
             self.repository.save(result)
-            analysis_results.append(result)
+
+        processing_time_seconds = round(time.perf_counter() - start_time, 4)
 
         return BulkAnalysisResult(
             total=len(records),
-            valid=valid_count,
+            valid=len(valid_records),
             invalid=invalid_count,
+            processing_time_seconds=processing_time_seconds,
             sentiment_summary=sentiment_summary,
-            results=analysis_results
+            results=final_results
         )

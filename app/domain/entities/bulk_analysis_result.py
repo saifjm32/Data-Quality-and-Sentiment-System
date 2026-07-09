@@ -8,5 +8,6 @@ class BulkAnalysisResult:
     total: int
     valid: int
     invalid: int
+    processing_time_seconds: float
     sentiment_summary: dict[str, int]
     results: list[AnalysisResult]

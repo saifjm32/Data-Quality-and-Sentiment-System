@@ -16,13 +16,14 @@ from app.presentation.schemas.analysis_schema import (
 )
 
 
-router = APIRouter(prefix="/api", tags=["Analysis"])
+router = APIRouter(tags=["Records"])
 
 
 validator = TextValidationService(
     min_length=AppConfig.MIN_TEXT_LENGTH,
     max_length=AppConfig.MAX_TEXT_LENGTH
 )
+
 sentiment_analyzer = create_sentiment_analyzer()
 repository = InMemoryAnalysisRepository()
 
@@ -49,8 +50,9 @@ def to_response(result: AnalysisResult) -> AnalyzeResponse:
     )
 
 
-@router.post("/analyze", response_model=AnalyzeResponse)
-def analyze_record(request: AnalyzeRequest) -> AnalyzeResponse:
+@router.post("/records/analyze", response_model=AnalyzeResponse)
+@router.post("/api/analyze", response_model=AnalyzeResponse, include_in_schema=False)
+async def analyze_record(request: AnalyzeRequest) -> AnalyzeResponse:
     record = TextRecord(
         record_id=request.id,
         text=request.text
@@ -61,8 +63,16 @@ def analyze_record(request: AnalyzeRequest) -> AnalyzeResponse:
     return to_response(result)
 
 
-@router.post("/analyze/bulk", response_model=BulkAnalyzeResponse)
-def analyze_bulk_records(request: BulkAnalyzeRequest) -> BulkAnalyzeResponse:
+@router.post("/records/analyze/bulk", response_model=BulkAnalyzeResponse)
+@router.post(
+    "/api/analyze/bulk",
+    response_model=BulkAnalyzeResponse,
+    include_in_schema=False
+)
+async def analyze_bulk_records(
+    request: BulkAnalyzeRequest,
+    include_results: bool = AppConfig.BULK_INCLUDE_RESULTS_DEFAULT
+) -> BulkAnalyzeResponse:
     records = [
         TextRecord(record_id=item.id, text=item.text)
         for item in request.records
@@ -70,24 +80,46 @@ def analyze_bulk_records(request: BulkAnalyzeRequest) -> BulkAnalyzeResponse:
 
     result = analyze_bulk_use_case.execute(records)
 
+    invalid_records = [
+        to_response(item)
+        for item in result.results
+        if not item.is_valid
+    ]
+
+    response_results = None
+
+    if include_results:
+        response_results = [
+            to_response(item)
+            for item in result.results
+        ]
+
     return BulkAnalyzeResponse(
         total=result.total,
         valid=result.valid,
         invalid=result.invalid,
+        processing_time_seconds=result.processing_time_seconds,
         sentiment_summary=result.sentiment_summary,
-        results=[to_response(item) for item in result.results]
+        invalid_records=invalid_records,
+        results=response_results
     )
 
 
-@router.get("/history", response_model=list[AnalyzeResponse])
-def get_history() -> list[AnalyzeResponse]:
+@router.get("/records", response_model=list[AnalyzeResponse])
+@router.get("/api/history", response_model=list[AnalyzeResponse], include_in_schema=False)
+async def get_records() -> list[AnalyzeResponse]:
     results = repository.get_all()
 
     return [to_response(result) for result in results]
 
 
-@router.get("/history/{record_id}", response_model=AnalyzeResponse)
-def get_history_by_record_id(record_id: str) -> AnalyzeResponse:
+@router.get("/records/{record_id}", response_model=AnalyzeResponse)
+@router.get(
+    "/api/history/{record_id}",
+    response_model=AnalyzeResponse,
+    include_in_schema=False
+)
+async def get_record_by_id(record_id: str) -> AnalyzeResponse:
     result = repository.get_by_record_id(record_id)
 
     if result is None:
