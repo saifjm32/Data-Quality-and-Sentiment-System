@@ -7,7 +7,9 @@ def test_fake_analyzer_returns_positive():
 
     result = analyzer.analyze("Great service")
 
-    assert result == SentimentLabel.POSITIVE
+    assert result.label == SentimentLabel.POSITIVE
+    assert result.confidence == 1.0
+    assert result.model_name == "fake-keyword-sentiment-analyzer"
 
 
 def test_fake_analyzer_returns_negative():
@@ -15,7 +17,9 @@ def test_fake_analyzer_returns_negative():
 
     result = analyzer.analyze("This is terrible")
 
-    assert result == SentimentLabel.NEGATIVE
+    assert result.label == SentimentLabel.NEGATIVE
+    assert result.confidence == 1.0
+    assert result.model_name == "fake-keyword-sentiment-analyzer"
 
 
 def test_fake_analyzer_returns_neutral():
@@ -23,4 +27,6 @@ def test_fake_analyzer_returns_neutral():
 
     result = analyzer.analyze("The product arrived yesterday")
 
-    assert result == SentimentLabel.NEUTRAL
+    assert result.label == SentimentLabel.NEUTRAL
+    assert result.confidence == 0.5
+    assert result.model_name == "fake-keyword-sentiment-analyzer"

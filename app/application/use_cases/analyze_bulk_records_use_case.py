@@ -62,7 +62,7 @@ class AnalyzeBulkRecordsUseCase:
         sentiments = self.sentiment_analyzer.analyze_batch(valid_texts)
 
         for (index, record), sentiment in zip(valid_records, sentiments):
-            sentiment_summary[sentiment.value] += 1
+            sentiment_summary[sentiment.label.value] += 1
 
             result = AnalysisResult(
                 record_id=record.record_id,

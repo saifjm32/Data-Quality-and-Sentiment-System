@@ -13,6 +13,7 @@ from app.presentation.schemas.analysis_schema import (
     AnalyzeResponse,
     BulkAnalyzeRequest,
     BulkAnalyzeResponse,
+    SentimentResponse,
 )
 
 
@@ -41,12 +42,21 @@ analyze_bulk_use_case = AnalyzeBulkRecordsUseCase(
 
 
 def to_response(result: AnalysisResult) -> AnalyzeResponse:
+    sentiment_response = None
+
+    if result.sentiment is not None:
+        sentiment_response = SentimentResponse(
+            label=result.sentiment.label.value,
+            confidence=result.sentiment.confidence,
+            model_name=result.sentiment.model_name
+        )
+
     return AnalyzeResponse(
         id=result.record_id,
         text=result.text,
         valid=result.is_valid,
         errors=result.errors,
-        sentiment=result.sentiment.value if result.sentiment else None
+        sentiment=sentiment_response
     )
 
 

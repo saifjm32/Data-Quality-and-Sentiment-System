@@ -1,6 +1,12 @@
 from pydantic import BaseModel
 
 
+class SentimentResponse(BaseModel):
+    label: str
+    confidence: float
+    model_name: str
+
+
 class AnalyzeRequest(BaseModel):
     id: str
     text: str
@@ -11,7 +17,7 @@ class AnalyzeResponse(BaseModel):
     text: str
     valid: bool
     errors: list[str]
-    sentiment: str | None
+    sentiment: SentimentResponse | None
 
 
 class BulkAnalyzeRequest(BaseModel):
