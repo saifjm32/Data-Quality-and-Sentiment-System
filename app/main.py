@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-
 from app.presentation.api.routes.analysis_routes import router as analysis_router
+
 
 
 app = FastAPI(
