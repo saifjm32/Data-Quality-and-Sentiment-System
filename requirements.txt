@@ -5,6 +5,5 @@ pytest
 python-dotenv
 transformers
 torch
-httpx2
-python-dotenv
+httpx
 qdrant-client
