@@ -38,6 +38,16 @@
             padding: 12px;
             overflow-x: auto;
         }
+
+        .valid {
+            color: green;
+            font-weight: bold;
+        }
+
+        .invalid {
+            color: red;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -52,9 +62,13 @@
         <label>Text</label>
         <textarea id="single-text">Great service</textarea>
 
+        <label>Source</label>
+        <input id="single-source" value="survey" />
+
         <button onclick="analyzeSingle()">Analyze Single Record</button>
 
         <h3>Result</h3>
+        <div id="single-status"></div>
         <pre id="single-result"></pre>
     </section>
 
@@ -63,24 +77,28 @@
 
         <p>Enter JSON records:</p>
 
-        <textarea id="bulk-input" rows="10">[
+        <textarea id="bulk-input" rows="12">[
   {
-    "id": "1",
-    "text": "Great service"
+    "id": "bulk-ui-1",
+    "text": "Great service",
+    "source": "survey"
   },
   {
-    "id": "2",
-    "text": "This is terrible"
+    "id": "bulk-ui-2",
+    "text": "This is terrible",
+    "source": "support"
   },
   {
-    "id": "3",
-    "text": ""
+    "id": "bulk-ui-3",
+    "text": "",
+    "source": "survey"
   }
 ]</textarea>
 
         <button onclick="analyzeBulk()">Analyze Bulk Records</button>
 
         <h3>Result</h3>
+        <div id="bulk-status"></div>
         <pre id="bulk-result"></pre>
     </section>
 
@@ -94,22 +112,38 @@
     </section>
 
     <script>
+        function showStatus(elementId, data) {
+            const statusElement = document.getElementById(elementId);
+
+            if (data.valid === true) {
+                statusElement.innerHTML = '<p class="valid">Valid record</p>';
+            } else if (data.valid === false) {
+                statusElement.innerHTML = '<p class="invalid">Invalid record</p>';
+            } else {
+                statusElement.innerHTML = '';
+            }
+        }
+
         async function analyzeSingle() {
             const id = document.getElementById("single-id").value;
             const text = document.getElementById("single-text").value;
+            const source = document.getElementById("single-source").value;
 
-            const response = await fetch("/api/analyze", {
+            const response = await fetch("/records/analyze", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
                     id: id,
-                    text: text
+                    text: text,
+                    source: source
                 })
             });
 
             const data = await response.json();
+
+            showStatus("single-status", data);
 
             document.getElementById("single-result").textContent =
                 JSON.stringify(data, null, 2);
@@ -119,7 +153,7 @@
             const bulkText = document.getElementById("bulk-input").value;
             const records = JSON.parse(bulkText);
 
-            const response = await fetch("/api/analyze/bulk", {
+            const response = await fetch("/records/analyze/bulk", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -131,12 +165,19 @@
 
             const data = await response.json();
 
+            document.getElementById("bulk-status").innerHTML =
+                `<p><strong>Total:</strong> ${data.total} |
+                  <strong>Valid:</strong> ${data.valid} |
+                  <strong>Invalid:</strong> ${data.invalid} |
+                  <strong>Batch size:</strong> ${data.batch_size} |
+                  <strong>Time:</strong> ${data.processing_time_seconds}s</p>`;
+
             document.getElementById("bulk-result").textContent =
                 JSON.stringify(data, null, 2);
         }
 
         async function loadHistory() {
-            const response = await fetch("/api/history");
+            const response = await fetch("/records");
 
             const data = await response.json();
 
