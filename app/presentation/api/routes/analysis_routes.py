@@ -37,13 +37,13 @@ analyze_single_use_case = AnalyzeSingleRecordUseCase(
 analyze_bulk_use_case = AnalyzeBulkRecordsUseCase(
     validator=validator,
     sentiment_analyzer=sentiment_analyzer,
-    repository=repository
+    repository=repository,
+    batch_size=AppConfig.SENTIMENT_BATCH_SIZE
 )
 
 
 def to_response(result: AnalysisResult) -> AnalyzeResponse:
     sentiment_response = None
-    
 
     if result.sentiment is not None:
         sentiment_response = SentimentResponse(
@@ -53,14 +53,13 @@ def to_response(result: AnalysisResult) -> AnalyzeResponse:
         )
 
     return AnalyzeResponse(
-       id=result.record_id,
-       text=result.text,
-       source=result.source,
-       valid=result.is_valid,
-       errors=result.errors,
-       sentiment=sentiment_response
-)
-    
+        id=result.record_id,
+        text=result.text,
+        source=result.source,
+        valid=result.is_valid,
+        errors=result.errors,
+        sentiment=sentiment_response
+    )
 
 
 @router.post("/records/analyze", response_model=AnalyzeResponse)
@@ -70,8 +69,7 @@ async def analyze_record(request: AnalyzeRequest) -> AnalyzeResponse:
         record_id=request.id,
         text=request.text,
         source=request.source
-)
-    
+    )
 
     result = analyze_single_use_case.execute(record)
 
@@ -89,13 +87,13 @@ async def analyze_bulk_records(
     include_results: bool = AppConfig.BULK_INCLUDE_RESULTS_DEFAULT
 ) -> BulkAnalyzeResponse:
     records = [
-       TextRecord(
-           record_id=item.id,
-           text=item.text,
-           source=item.source
-      )
-      for item in request.records
-]
+        TextRecord(
+            record_id=item.id,
+            text=item.text,
+            source=item.source
+        )
+        for item in request.records
+    ]
 
     result = analyze_bulk_use_case.execute(records)
 
@@ -118,6 +116,7 @@ async def analyze_bulk_records(
         valid=result.valid,
         invalid=result.invalid,
         processing_time_seconds=result.processing_time_seconds,
+        batch_size=result.batch_size,
         sentiment_summary=result.sentiment_summary,
         invalid_records=invalid_records,
         results=response_results

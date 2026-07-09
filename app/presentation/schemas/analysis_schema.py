@@ -31,6 +31,7 @@ class BulkAnalyzeResponse(BaseModel):
     valid: int
     invalid: int
     processing_time_seconds: float
+    batch_size: int
     sentiment_summary: dict[str, int]
     invalid_records: list[AnalyzeResponse]
     results: list[AnalyzeResponse] | None = None

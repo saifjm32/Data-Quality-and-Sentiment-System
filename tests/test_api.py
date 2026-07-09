@@ -164,6 +164,7 @@ def test_bulk_analyze_endpoint_can_include_full_results():
     assert data["valid"] == 2
     assert data["invalid"] == 0
     assert data["processing_time_seconds"] >= 0
+    assert data["batch_size"] == 32
     assert data["invalid_records"] == []
     assert len(data["results"]) == 2
     assert data["results"][0]["sentiment"]["label"] == "positive"

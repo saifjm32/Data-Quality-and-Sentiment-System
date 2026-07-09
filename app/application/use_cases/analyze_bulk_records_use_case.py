@@ -6,6 +6,7 @@ from app.domain.entities.analysis_result import AnalysisResult
 from app.domain.entities.bulk_analysis_result import BulkAnalysisResult
 from app.domain.entities.text_record import TextRecord
 from app.domain.repositories.analysis_repository import AnalysisRepository
+from app.domain.value_objects.sentiment_result import SentimentResult
 
 
 class AnalyzeBulkRecordsUseCase:
@@ -13,11 +14,13 @@ class AnalyzeBulkRecordsUseCase:
         self,
         validator: TextValidationService,
         sentiment_analyzer: SentimentAnalyzer,
-        repository: AnalysisRepository
+        repository: AnalysisRepository,
+        batch_size: int = 32
     ):
         self.validator = validator
         self.sentiment_analyzer = sentiment_analyzer
         self.repository = repository
+        self.batch_size = max(1, batch_size)
 
     def execute(self, records: list[TextRecord]) -> BulkAnalysisResult:
         start_time = time.perf_counter()
@@ -64,7 +67,7 @@ class AnalyzeBulkRecordsUseCase:
             for _, record in valid_records
         ]
 
-        sentiments = self.sentiment_analyzer.analyze_batch(valid_texts)
+        sentiments = self._analyze_texts_in_batches(valid_texts)
 
         for (index, record), sentiment in zip(valid_records, sentiments):
             sentiment_summary[sentiment.label.value] += 1
@@ -93,9 +96,23 @@ class AnalyzeBulkRecordsUseCase:
             valid=len(valid_records),
             invalid=invalid_count,
             processing_time_seconds=round(time.perf_counter() - start_time, 4),
+            batch_size=self.batch_size,
             sentiment_summary=sentiment_summary,
             results=final_results
         )
+
+    def _analyze_texts_in_batches(
+        self,
+        texts: list[str]
+    ) -> list[SentimentResult]:
+        all_sentiments: list[SentimentResult] = []
+
+        for start_index in range(0, len(texts), self.batch_size):
+            batch = texts[start_index:start_index + self.batch_size]
+            batch_sentiments = self.sentiment_analyzer.analyze_batch(batch)
+            all_sentiments.extend(batch_sentiments)
+
+        return all_sentiments
 
     def _find_repository_duplicate_errors(self, record: TextRecord) -> list[str]:
         errors = []

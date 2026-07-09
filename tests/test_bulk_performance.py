@@ -35,6 +35,7 @@ def test_bulk_endpoint_processes_5000_records():
     assert data["valid"] == 5000
     assert data["invalid"] == 0
     assert data["processing_time_seconds"] >= 0
+    assert data["batch_size"] == 32
     assert data["sentiment_summary"]["positive"] == 5000
     assert data["sentiment_summary"]["negative"] == 0
     assert data["sentiment_summary"]["neutral"] == 0
